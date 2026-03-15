@@ -120,6 +120,20 @@ pub fn os_plugin_dir(format: PluginFormat) -> Option<PathBuf> {
     }
 }
 
+/// Get the filename of the currently running executable, without the path.
+/// It is used for printing the usage message.
+pub fn exe_filename() -> String {
+    std::env::args()
+        .next()
+        .and_then(|p| {
+            PathBuf::from(p)
+                .file_name()
+                .and_then(|f| f.to_str())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| "bundle".to_string())
+}
+
 /// Sign the given bundle with an ad-hoc signature using the `codesign` tool on macOS.
 pub fn sign_adhoc(bundle: &Path) -> Result<()> {
     if !cfg!(target_os = "macos") {
@@ -140,18 +154,19 @@ pub fn sign_adhoc(bundle: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Get the filename of the currently running executable, without the path.
-/// It is used for printing the usage message.
-pub fn exe_filename() -> String {
-    std::env::args()
-        .next()
-        .and_then(|p| {
-            PathBuf::from(p)
-                .file_name()
-                .and_then(|f| f.to_str())
-                .map(|s| s.to_string())
-        })
-        .unwrap_or_else(|| "bundle".to_string())
+/// Kill the `AudioComponentRegistrar` process on macOS, which is responsible for caching AU plugin information.
+pub fn kill_audio_component_registrar() -> Result<()> {
+    if !cfg!(target_os = "macos") {
+        anyhow::bail!("AudioComponentRegistrar is only supported on macOS");
+    }
+
+    std::process::Command::new("killall")
+        .arg("-9")
+        .arg("AudioComponentRegistrar")
+        .spawn()?
+        .wait()?;
+
+    Ok(())
 }
 
 impl std::fmt::Display for PluginFormat {

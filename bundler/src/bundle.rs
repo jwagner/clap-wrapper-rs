@@ -100,8 +100,8 @@ impl BundleOptions<'_> {
             }
 
             (PluginFormat::Vst3, _) => {
-                let os_dylib_ext = match self.os {
-                    OperatingSystem::Windows => "dll",
+                let os_ext = match self.os {
+                    OperatingSystem::Windows => "vst3", // huh?
                     OperatingSystem::Linux => "so",
                     OperatingSystem::MacOS => "",
                 };
@@ -126,7 +126,7 @@ impl BundleOptions<'_> {
                         .join("Contents")
                         .join(os_tag)
                         .join(&plugin.clap_name)
-                        .with_extension(os_dylib_ext),
+                        .with_extension(os_ext),
                 )?;
             }
         }

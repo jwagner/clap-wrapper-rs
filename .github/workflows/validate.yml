@@ -198,6 +198,5 @@ jobs:
       - name: Run `auval`
         shell: bash
         run: |
-            killall -9 AudioComponentRegistrar || true
             auval -a
             auval -strict -v ${{ matrix.auv2_type }} ${{ matrix.auv2_subtype }} ${{ matrix.auv2_manufacturer }}
