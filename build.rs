@@ -132,7 +132,7 @@ fn build_vst3(os: &str, debug: bool) {
 
 fn build_auv2(debug: bool) {
     let mut cc = cc::Build::new();
-    cc.cpp(true).std("c++20"); //AudioUnitSDK requires C++20
+    cc.cpp(true).std("c++17"); //AudioUnitSDK requires C++17 (rolled back to 1.1.0)
     cc.flag_if_supported("-fno-char8_t");
 
     cc.include("./src/auv2-cpp");
