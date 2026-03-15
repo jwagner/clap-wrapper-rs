@@ -100,6 +100,12 @@ impl BundleOptions<'_> {
             }
 
             (PluginFormat::Vst3, _) => {
+                let os_dylib_ext = match self.os {
+                    OperatingSystem::Windows => "dll",
+                    OperatingSystem::Linux => "so",
+                    OperatingSystem::MacOS => "",
+                };
+
                 let os_tag = match (self.os, self.arch) {
                     (OperatingSystem::Windows, Architecture::X86) => "x86-win",
                     (OperatingSystem::Windows, Architecture::X86_64) => "x86_64-win",
@@ -119,7 +125,8 @@ impl BundleOptions<'_> {
                     output_path
                         .join("Contents")
                         .join(os_tag)
-                        .join(&plugin.clap_name),
+                        .join(&plugin.clap_name)
+                        .with_extension(os_dylib_ext),
                 )?;
             }
         }
