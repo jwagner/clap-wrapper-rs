@@ -14,7 +14,7 @@ jobs:
           - package: example-clack
             library_name: libexample_clack.so
             plugin_name: Clack PolySynth Example
-          
+
     name: Validate "${{ matrix.package }}" (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     steps:
@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ matrix.runner }}-vst3
-          path: ./target/debug/${{ matrix.library_name }}.vst3
+          path: ./target/debug/${{ matrix.plugin_name }}.vst3
           retention-days: 30
 
       - name: Build `vst3-validator`
@@ -64,7 +64,7 @@ jobs:
       - name: Run `vst3-validator`
         shell: bash
         run: |
-            "./vst3sdk/cmake-build/bin/validator" -e "./target/debug/${{ matrix.library_name }}.vst3" 
+            "./vst3sdk/cmake-build/bin/validator" -e "./target/debug/${{ matrix.plugin_name }}.vst3" 
 
   validate-windows:
     strategy:
@@ -122,7 +122,7 @@ jobs:
       - name: Run `vst3-validator`
         shell: bash
         run: |
-            "./vst3sdk/cmake-build/bin/Debug/validator" -e "./${{ matrix.package }}.vst3" 
+            "./vst3sdk/cmake-build/bin/Debug/validator" -e "./${{ matrix.plugin_name }}.vst3" 
       
   validate-macos:
     strategy:
