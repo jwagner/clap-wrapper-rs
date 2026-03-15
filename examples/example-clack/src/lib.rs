@@ -38,6 +38,9 @@ impl DefaultPluginFactory for PolySynthPlugin {
         use clack_plugin::plugin::features::*;
 
         PluginDescriptor::new("org.rust-audio.clack.polysynth", "Clack PolySynth Example")
+            .with_description("A simple polyphonic synthesizer example for Clack")
+            .with_vendor("Rust Audio")
+            .with_version("0.1.0")
             .with_features([SYNTHESIZER, MONO, INSTRUMENT])
     }
 

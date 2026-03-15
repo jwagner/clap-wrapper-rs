@@ -2,6 +2,7 @@
 resolver = "3"
 members = [ 
     ".", 
+    "bundler",
     "examples/example-clack",
     "examples/example-nih-plug",
 ]
