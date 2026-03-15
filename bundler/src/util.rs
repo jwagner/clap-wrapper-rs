@@ -1,5 +1,15 @@
 use anyhow::Result;
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
+
+#[derive(Debug, Clone, Copy)]
+pub struct AUv2Id {
+    pub manufacturer: [u8; 4],
+    pub subtype: [u8; 4],
+    pub type_: [u8; 4],
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PluginFormat {
@@ -176,5 +186,37 @@ impl std::fmt::Display for PluginFormat {
             PluginFormat::Vst3 => write!(f, "VST3"),
             PluginFormat::Auv2 => write!(f, "AUv2"),
         }
+    }
+}
+
+impl FromStr for AUv2Id {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let mut parts = s.split(':');
+        let manufacturer = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Missing manufacturer code"))?
+            .as_bytes()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Manufacturer code must be 4 characters"))?;
+        let subtype = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Missing subtype code"))?
+            .as_bytes()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Subtype code must be 4 characters"))?;
+        let type_ = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Missing type code"))?
+            .as_bytes()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Type code must be 4 characters"))?;
+
+        Ok(Self {
+            manufacturer,
+            subtype,
+            type_,
+        })
     }
 }

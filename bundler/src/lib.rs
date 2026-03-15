@@ -1,4 +1,7 @@
-use crate::{bundle::BundleOptions, util::PluginFormat};
+use crate::{
+    bundle::BundleOptions,
+    util::{AUv2Id, PluginFormat},
+};
 use std::path::{Path, PathBuf};
 use yansi::Paint;
 
@@ -12,6 +15,9 @@ struct Args {
 
     /// Whether to bundle VST3 plugins as a single file (instead of a folder with multiple files) on Windows
     vst3_single_file: bool,
+
+    /// Override the AUv2 ID (only works if the library exports only a single plugin)
+    auv2_override_id: Option<AUv2Id>,
 
     /// Dylibs built with `clap_wrapper` to bundle.
     dylibs: Vec<PathBuf>,
@@ -27,6 +33,7 @@ impl Args {
 
         let install = args.contains(["-i", "--install"]);
         let vst3_single_file = args.contains("--vst3-file");
+        let auv2_id = args.opt_value_from_str::<_, AUv2Id>("--auv2-id").ok()?;
         let dylibs = args
             .finish()
             .into_iter()
@@ -39,6 +46,7 @@ impl Args {
 
         Some(Self {
             install,
+            auv2_override_id: auv2_id,
             vst3_single_file,
             dylibs,
         })
@@ -49,12 +57,20 @@ pub fn run() {
     let args = Args::parse().unwrap_or_else(|| {
         let exe_name = util::exe_filename();
 
-        eprintln!("{}: {exe_name} [options] <paths...>", "Usage".bold());
-        eprintln!();
-        eprintln!("{}:", "Options".bold());
-        eprintln!("  --vst3-file      Bundle VST3 plugins as a single file on Windows");
-        eprintln!("  -i, --install    Install plugins to the OS-specific directories");
-        eprintln!("  -h, --help       Print this help message");
+        eprintln!(
+            r#"
+{}: {exe_name} [options] <paths...>
+
+{}: 
+  --vst3-file               Bundle VST3 plugins as a single file on Windows
+  --auv2-id manu:type:subt  Set the AUv2 ID (only if the library exports a single plugin)
+  --[i]nstall               Install plugins to the OS-specific directories
+  --[h]elp                  Print this help message 
+"#,
+            "Usage".bold(),
+            "Options".bold()
+        );
+
         std::process::exit(0);
     });
 
@@ -67,6 +83,14 @@ pub fn run() {
         eprintln!("{}: unsupported architecture", "error".red().bold());
         std::process::exit(1);
     });
+
+    if args.auv2_override_id.is_some() && args.dylibs.len() != 1 {
+        eprintln!(
+            "{}: the --auv2-id option can only be used when bundling a single plugin",
+            "error".red().bold()
+        );
+        std::process::exit(1);
+    }
 
     let mut failed = false;
     for dylib in args.dylibs {
@@ -118,6 +142,7 @@ pub fn run() {
                 arch,
                 overwrite_existing: true,
                 vst3_single_file: args.vst3_single_file,
+                auv2_override_id: args.auv2_override_id,
             };
 
             match options.bundle() {
@@ -132,6 +157,10 @@ pub fn run() {
                                 e
                             );
                         });
+
+                        if format == PluginFormat::Auv2 {
+                            util::kill_audio_component_registrar().ok();
+                        }
                     }
                 }
                 Err(e) => {

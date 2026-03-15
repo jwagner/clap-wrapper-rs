@@ -51,6 +51,10 @@ See [validate.yml](.github/workflows/validate.yml) for a complete example of how
 
 ## Changelog
 
+- 0.3.0:
+    - Updated `clap-wrapper` to latest (0.14.0).
+    - Added an experimental bundler tool (see [bundler](bundler) folder) that can be used to 
+    automate the bundling process.
 - 0.2.1:
     - Added documentation
 - 0.2.0:

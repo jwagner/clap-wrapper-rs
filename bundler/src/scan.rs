@@ -1,3 +1,4 @@
+use crate::util::AUv2Id;
 use anyhow::Result;
 use clap_sys::{
     entry::clap_plugin_entry,
@@ -25,10 +26,7 @@ pub struct PluginInfo {
     pub clap_vendor: Option<String>,
     pub clap_version: Option<String>,
     pub clap_description: Option<String>,
-
-    pub auv2_code_manu: Option<[u8; 4]>,
-    pub auv2_code_subt: Option<[u8; 4]>,
-    pub auv2_code_type: Option<[u8; 4]>,
+    pub auv2_id: Option<AUv2Id>,
 }
 
 impl PluginLibrary {
@@ -126,6 +124,18 @@ impl PluginLibrary {
                         _ => None,
                     };
 
+                    let auv2_code_subtype = auv2_info
+                        .and_then(|info| parse_auv2_code(info.au_subt.as_ptr()).transpose())
+                        .transpose()?;
+                    let auv2_code_type = auv2_info
+                        .and_then(|info| parse_auv2_code(info.au_type.as_ptr()).transpose())
+                        .transpose()?;
+                    let auv2_code_manu = plugin_factory_as_auv2
+                        .and_then(|factory| {
+                            parse_auv2_code(factory.manufacturer_code as *const _).transpose()
+                        })
+                        .transpose()?;
+
                     Ok(PluginInfo {
                         clap_id: cstr_to_string(descriptor.id)?.unwrap_or_default(),
                         clap_name: cstr_to_string(descriptor.name)?.unwrap_or_default(),
@@ -133,17 +143,14 @@ impl PluginLibrary {
                         clap_version: cstr_to_string(descriptor.version)?,
                         clap_description: cstr_to_string(descriptor.description)?,
 
-                        auv2_code_subt: auv2_info
-                            .and_then(|info| parse_auv2_code(info.au_subt.as_ptr()).transpose())
-                            .transpose()?,
-                        auv2_code_type: auv2_info
-                            .and_then(|info| parse_auv2_code(info.au_type.as_ptr()).transpose())
-                            .transpose()?,
-                        auv2_code_manu: plugin_factory_as_auv2
-                            .and_then(|factory| {
-                                parse_auv2_code(factory.manufacturer_code as *const _).transpose()
-                            })
-                            .transpose()?,
+                        auv2_id: match (auv2_code_manu, auv2_code_type, auv2_code_subtype) {
+                            (Some(manu), Some(type_), Some(subtype)) => Some(AUv2Id {
+                                manufacturer: manu,
+                                type_,
+                                subtype,
+                            }),
+                            _ => None,
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>>>()?;

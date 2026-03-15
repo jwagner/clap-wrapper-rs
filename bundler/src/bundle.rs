@@ -1,6 +1,6 @@
 use crate::{
     scan::{PluginInfo, PluginLibrary},
-    util::{Architecture, OperatingSystem, PluginFormat},
+    util::{AUv2Id, Architecture, OperatingSystem, PluginFormat},
 };
 use anyhow::Result;
 use std::{
@@ -19,6 +19,7 @@ pub struct BundleOptions<'a> {
     pub os: OperatingSystem,
     pub arch: Architecture,
 
+    pub auv2_override_id: Option<AUv2Id>,
     pub vst3_single_file: bool,
     pub overwrite_existing: bool,
 }
@@ -33,6 +34,13 @@ impl BundleOptions<'_> {
 
         if self.format == PluginFormat::Vst3 && !self.library.has_vst3_entry {
             anyhow::bail!("Plugin library does not contain a VST3 entry point");
+        }
+
+        if self.format == PluginFormat::Auv2
+            && self.library.plugins.len() > 1
+            && self.auv2_override_id.is_some()
+        {
+            anyhow::bail!("AUv2 ID override only works for single-plugin libraries");
         }
 
         let plugin = self
@@ -67,7 +75,7 @@ impl BundleOptions<'_> {
         match (self.format, self.os) {
             (_, OperatingSystem::MacOS) => {
                 let info_plist = if self.format == PluginFormat::Auv2 {
-                    info_plist_auv2(plugin, self.library)?
+                    info_plist_auv2(plugin, self.library, self.auv2_override_id)?
                 } else {
                     info_plist_generic(plugin)
                 };
@@ -182,7 +190,11 @@ fn info_plist_generic(plugin: &PluginInfo) -> String {
 }
 
 /// Generate a MacOS bundle Info.plist file for the given plugin, including AUv2-specific metadata if available
-fn info_plist_auv2(plugin: &PluginInfo, library: &PluginLibrary) -> Result<String> {
+fn info_plist_auv2(
+    plugin: &PluginInfo,
+    library: &PluginLibrary,
+    auv2_override_id: Option<AUv2Id>,
+) -> Result<String> {
     let mut buffer = format!(
         r#"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -231,38 +243,16 @@ fn info_plist_auv2(plugin: &PluginInfo, library: &PluginLibrary) -> Result<Strin
 
     // we currently support at most 4 plugins per bundle
     for (index, plugin) in library.plugins.iter().take(4).enumerate() {
-        let code_manu = plugin
-            .auv2_code_manu
-            .as_ref()
-            .and_then(|x| str::from_utf8(x).ok())
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Plugin {} has an invalid or missing AUv2 manufacturer code",
-                    plugin.clap_name
-                )
-            })?;
+        let auv2_id = auv2_override_id.or(plugin.auv2_id).ok_or_else(|| {
+            anyhow::anyhow!("Plugin does not export an AUv2 ID and no override was provided")
+        })?;
 
-        let code_subt = plugin
-            .auv2_code_subt
-            .as_ref()
-            .and_then(|x| str::from_utf8(x).ok())
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Plugin {} has an invalid or missing AUv2 subtype code",
-                    plugin.clap_name
-                )
-            })?;
-
-        let code_type = plugin
-            .auv2_code_type
-            .as_ref()
-            .and_then(|x| str::from_utf8(x).ok())
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Plugin {} has an invalid or missing AUv2 type code",
-                    plugin.clap_name
-                )
-            })?;
+        let code_manu = str::from_utf8(&auv2_id.manufacturer)
+            .map_err(|_| anyhow::anyhow!("Non-ASCII AUv2 manufacturer code"))?;
+        let code_subt = str::from_utf8(&auv2_id.subtype)
+            .map_err(|_| anyhow::anyhow!("Non-ASCII AUv2 subtype code"))?;
+        let code_type = str::from_utf8(&auv2_id.type_)
+            .map_err(|_| anyhow::anyhow!("Non-ASCII AUv2 type code"))?;
 
         let version = parse_version_auv2(plugin.clap_version.as_deref().unwrap_or("0.0.0"));
 
