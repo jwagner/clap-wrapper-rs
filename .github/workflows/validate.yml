@@ -97,7 +97,7 @@ jobs:
         shell: bash
         run: |
             cargo build -p ${{ matrix.package }}
-            cargo bundle target/debug/${{ matrix.library_name }}
+            cargo bundle --vst3-folder target/debug/${{ matrix.library_name }}
 
       - name: Upload VST3
         uses: actions/upload-artifact@v4

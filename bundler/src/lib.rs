@@ -104,7 +104,7 @@ fn run_result() -> Result<()> {
                 os,
                 arch,
                 overwrite_existing: true,
-                vst3_single_file: args.vst3_folder,
+                vst3_single_file: !args.vst3_folder,
                 auv2_override_id: args.auv2_id,
             };
 
