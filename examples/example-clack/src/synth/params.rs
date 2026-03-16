@@ -1,6 +1,6 @@
 //! Contains all types and implementations related to parameter management.
 
-use crate::{PolySynthAudioProcessor, PolySynthPluginMainThread};
+use super::{PolySynthAudioProcessor, PolySynthPluginMainThread};
 use clack_extensions::params::*;
 use clack_extensions::state::PluginStateImpl;
 use clack_plugin::events::event_types::{ParamModEvent, ParamValueEvent};

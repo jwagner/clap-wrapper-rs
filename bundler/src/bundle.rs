@@ -146,8 +146,7 @@ impl BundleOptions<'_> {
 /// Generate a generic MacOS bundle Info.plist file for the given plugin.
 fn info_plist_generic(plugin: &PluginInfo) -> String {
     format!(
-        r#"
-<?xml version="1.0" encoding="UTF-8"?>
+        r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist>
   <dict>
@@ -196,8 +195,7 @@ fn info_plist_auv2(
     auv2_override_id: Option<AUv2Id>,
 ) -> Result<String> {
     let mut buffer = format!(
-        r#"
-<?xml version="1.0" encoding="UTF-8"?>
+        r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist>
   <dict>
@@ -230,8 +228,7 @@ fn info_plist_auv2(
     <key>NSPrincipalClass</key>
     <string/>
     <key>AudioComponents</key>
-    <array>
-"#,
+    <array>"#,
         plugin.clap_name,
         plugin.clap_id,
         plugin.clap_name,

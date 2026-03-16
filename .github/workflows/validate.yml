@@ -177,6 +177,12 @@ jobs:
           path: ./target/debug/${{ matrix.plugin_name }}.vst3
           retention-days: 30
 
+      - name: Run `auval`
+        shell: bash
+        run: |
+            auval -a
+            auval -strict -v ${{ matrix.auv2_type }} ${{ matrix.auv2_subtype }} ${{ matrix.auv2_manufacturer }}
+
       - name: Build `vst3-validator`
         shell: bash
         run: |
@@ -194,9 +200,3 @@ jobs:
         shell: bash
         run: |
             "./vst3sdk/cmake-build/bin/validator" -e "./target/debug/${{ matrix.plugin_name }}.vst3" 
-
-      - name: Run `auval`
-        shell: bash
-        run: |
-            auval -a
-            auval -strict -v ${{ matrix.auv2_type }} ${{ matrix.auv2_subtype }} ${{ matrix.auv2_manufacturer }}
