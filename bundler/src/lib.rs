@@ -23,7 +23,7 @@ struct Args {
     #[argh(switch)]
     vst3_folder: bool,
 
-    /// override the AUv2 ID in the `manu:type:subt` format, only works if the library exports only a single plugin)
+    /// override the AUv2 ID in the `type:subt:manu` format, only works if the library exports only a single plugin)
     #[argh(option)]
     auv2_id: Option<AUv2Id>,
 
