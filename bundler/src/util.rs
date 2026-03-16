@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::{
     path::{Path, PathBuf},
     str::FromStr,
@@ -65,6 +65,29 @@ impl OperatingSystem {
     }
 }
 
+/// Copies a directory recursively.
+/// Overwrites the destination if it already exists.
+/// Creates parent directories if needed.
+pub fn copy_all(src: &Path, dst: &Path) -> Result<()> {
+    if let Some(parent) = dst.parent() {
+        std::fs::create_dir_all(parent).context("Failed to create parent directories")?;
+    }
+
+    if src.is_file() {
+        std::fs::remove_file(dst).ok();
+        reflink::reflink_or_copy(src, dst).context("Failed to copy file")?;
+    } else if src.is_dir() {
+        for entry in std::fs::read_dir(src)? {
+            let entry = entry?;
+            copy_all(&entry.path(), &dst.join(entry.file_name()))?;
+        }
+    } else {
+        anyhow::bail!("Source does not exist");
+    }
+
+    Ok(())
+}
+
 /// If the given path does not exist, try to fix it by adding the OS-specific dynamic library prefix and suffix.
 pub fn fix_dylib_path(path: &Path, os: OperatingSystem) -> PathBuf {
     pub fn os_dylib_filename(name: &str, os: OperatingSystem) -> String {
@@ -128,20 +151,6 @@ pub fn os_plugin_dir(format: PluginFormat) -> Option<PathBuf> {
             }
         }
     }
-}
-
-/// Get the filename of the currently running executable, without the path.
-/// It is used for printing the usage message.
-pub fn exe_filename() -> String {
-    std::env::args()
-        .next()
-        .and_then(|p| {
-            PathBuf::from(p)
-                .file_name()
-                .and_then(|f| f.to_str())
-                .map(|s| s.to_string())
-        })
-        .unwrap_or_else(|| "bundle".to_string())
 }
 
 /// Sign the given bundle with an ad-hoc signature using the `codesign` tool on macOS.

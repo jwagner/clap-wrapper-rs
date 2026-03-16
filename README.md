@@ -52,7 +52,7 @@ See [validate.yml](.github/workflows/validate.yml) for a complete example of how
 ## Changelog
 
 - 0.3.0:
-    - Updated `clap-wrapper` to latest (0.14.0).
+    - Updated `clap-wrapper` to latest (0.14.0). See [clap-wrapper changelog](https://github.com/free-audio/clap-wrapper/wiki/ChangeLog#0140-march-2026).
     - Added an experimental bundler tool (see [bundler](bundler) folder) that can be used to 
     automate the bundling process.
 - 0.2.1:

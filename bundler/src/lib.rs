@@ -2,6 +2,8 @@ use crate::{
     bundle::BundleOptions,
     util::{AUv2Id, PluginFormat},
 };
+use anyhow::Result;
+use argh::FromArgs;
 use std::path::{Path, PathBuf};
 use yansi::Paint;
 
@@ -9,87 +11,48 @@ mod bundle;
 mod scan;
 mod util;
 
+/// A CLI tool to bundle CLAP plugins built with `clap_wrapper` into OS-specific and format-specific bundles (e.g. VST3 on Windows, AUv2 on macOS)
+#[derive(FromArgs)]
+#[argh(help_triggers("-h", "--help", "help"))]
 struct Args {
-    /// Install plugins to the OS-specific directories?
+    /// install plugins to the OS-specific directories?
+    #[argh(switch, short = 'i')]
     install: bool,
 
-    /// Whether to bundle VST3 plugins as a single file (instead of a folder with multiple files) on Windows
-    vst3_single_file: bool,
+    /// whether to bundle VST3 plugins as a folder (instead of a single .vst3 file) on Windows
+    #[argh(switch)]
+    vst3_folder: bool,
 
-    /// Override the AUv2 ID (only works if the library exports only a single plugin)
+    /// override the AUv2 ID in the `manu:type:subt` format, only works if the library exports only a single plugin)
+    #[argh(option)]
     auv2_override_id: Option<AUv2Id>,
 
-    /// Dylibs built with `clap_wrapper` to bundle.
+    /// dylibs built with `clap_wrapper` to bundle.
+    #[argh(positional)]
     dylibs: Vec<PathBuf>,
 }
 
-impl Args {
-    pub fn parse() -> Option<Self> {
-        let mut args = pico_args::Arguments::from_env();
-
-        if args.contains(["-h", "--help"]) {
-            return None;
+pub fn run() -> ! {
+    match run_result() {
+        Ok(()) => std::process::exit(0),
+        Err(e) => {
+            eprintln!("{}: {}", "error".red().bold(), e);
+            std::process::exit(1)
         }
-
-        let install = args.contains(["-i", "--install"]);
-        let vst3_single_file = args.contains("--vst3-file");
-        let auv2_id = args.opt_value_from_str::<_, AUv2Id>("--auv2-id").ok()?;
-        let dylibs = args
-            .finish()
-            .into_iter()
-            .map(PathBuf::from)
-            .collect::<Vec<_>>();
-
-        if dylibs.is_empty() {
-            return None;
-        }
-
-        Some(Self {
-            install,
-            auv2_override_id: auv2_id,
-            vst3_single_file,
-            dylibs,
-        })
     }
 }
 
-pub fn run() {
-    let args = Args::parse().unwrap_or_else(|| {
-        let exe_name = util::exe_filename();
+fn run_result() -> Result<()> {
+    let args: Args = argh::from_env();
+    let os = util::OperatingSystem::current()?;
+    let arch = util::Architecture::current()?;
 
-        eprintln!(
-            r#"
-{}: {exe_name} [options] <paths...>
-
-{}: 
-  --vst3-file               Bundle VST3 plugins as a single file on Windows
-  --auv2-id manu:type:subt  Set the AUv2 ID (only if the library exports a single plugin)
-  --[i]nstall               Install plugins to the OS-specific directories
-  --[h]elp                  Print this help message 
-"#,
-            "Usage".bold(),
-            "Options".bold()
-        );
-
-        std::process::exit(0);
-    });
-
-    let os = util::OperatingSystem::current().unwrap_or_else(|_| {
-        eprintln!("{}: unsupported os", "error".red().bold());
-        std::process::exit(1);
-    });
-
-    let arch = util::Architecture::current().unwrap_or_else(|_| {
-        eprintln!("{}: unsupported architecture", "error".red().bold());
-        std::process::exit(1);
-    });
+    if args.dylibs.is_empty() {
+        anyhow::bail!("no input files provided");
+    }
 
     if args.auv2_override_id.is_some() && args.dylibs.len() != 1 {
-        eprintln!(
-            "{}: the --auv2-id option can only be used when bundling a single plugin",
-            "error".red().bold()
-        );
-        std::process::exit(1);
+        anyhow::bail!("--auv2-id option can only be used when bundling a single plugin");
     }
 
     let mut failed = false;
@@ -141,37 +104,49 @@ pub fn run() {
                 os,
                 arch,
                 overwrite_existing: true,
-                vst3_single_file: args.vst3_single_file,
+                vst3_single_file: args.vst3_folder,
                 auv2_override_id: args.auv2_override_id,
             };
 
             match options.bundle() {
                 Ok(path) => {
-                    eprintln!("  - {} - {}", "OK".green().bold(), path.display());
+                    eprintln!("  - {} {}", "OK".green().bold(), path.display());
 
                     if cfg!(target_os = "macos") {
-                        util::sign_adhoc(&path).unwrap_or_else(|e| {
-                            eprintln!(
-                                "    {} - failed to sign bundle: {}",
-                                "WARN".yellow().bold(),
-                                e
-                            );
-                        });
+                        util::sign_adhoc(&path).ok();
+                    }
 
-                        if format == PluginFormat::Auv2 {
-                            util::kill_audio_component_registrar().ok();
+                    if args.install
+                        && let Some(install_dir) = util::os_plugin_dir(format)
+                    {
+                        match util::copy_all(
+                            &path,
+                            &install_dir.join("dev").join(path.file_name().unwrap()),
+                        ) {
+                            Ok(()) => {
+                                eprintln!(
+                                    "    {} installed to the system folder",
+                                    "OK".green().bold()
+                                );
+                            }
+                            Err(e) => {
+                                eprintln!("    {} {}", "ERR".red().bold(), e);
+                                failed = true;
+                            }
                         }
                     }
                 }
                 Err(e) => {
-                    eprintln!("  - {} - {}", "ERR".red().bold(), e);
+                    eprintln!("  - {} {}", "ERR".red().bold(), e);
                     failed = true;
                 }
             }
         }
     }
 
-    if failed {
-        std::process::exit(1);
+    if cfg!(target_os = "macos") {
+        util::kill_audio_component_registrar().ok();
     }
+
+    std::process::exit(if failed { 100 } else { 0 });
 }
