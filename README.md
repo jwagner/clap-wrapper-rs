@@ -42,9 +42,11 @@ This will export VST3 and AUv2 entrypoints that use the `clap_entry` symbol expo
 Keep in mind, that `clap-wrapper-rs` only adds the necessary entrypoints that reexport the CLAP plugin you already have. You'd still have to use a crate like `nih-plug` to actually create the plugin.
 
 
-After building, you have to manually "bundle" your plugin. This means setting up the correct directory structure and copying the necessary files. See [VST 3 Developer Portal: Plug-in Format Structure](https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Format.html) for more info about VST3 directory structure. For AUv2, the directory structure is similar. 
-Note that when building for MacOS you have to add a `Info.plist` file yourself.
-Check out [Info.vst3.plist](examples/example-clack/Info.vst3.plist) and [Info.auv2.plist](examples/example-clack/Info.auv2.plist) for an example of what `Info.plist` should look like.
+After building, you have to "bundle" your plugin. This means setting up the correct directory structure and copying the necessary files. See [VST 3 Developer Portal: Plug-in Format Structure](https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Format.html) for more info about VST3 directory structure. For AUv2, the directory structure is similar. 
+
+
+**clap-wrapper-rs** ships with a `bundler` tool that can be run as a separate step after
+building the plugin library. Click [here](bundler/README.md) for more info about how to use it.
 
 
 See [validate.yml](.github/workflows/validate.yml) for a complete example of how to build, bundle and validate a plugin.
