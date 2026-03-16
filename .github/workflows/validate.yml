@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
             submodules: recursive
 
@@ -83,7 +83,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
             submodules: recursive
 
@@ -147,7 +147,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
             submodules: recursive
 
@@ -161,7 +161,7 @@ jobs:
         shell: bash
         run: |
             cargo build -p ${{ matrix.package }}
-            cargo bundle -i --auv2-id ${{ matrix.auv2_manufacturer }}:${{ matrix.auv2_type }}:${{ matrix.auv2_subtype }} target/debug/${{ matrix.library_name }}
+            cargo bundle -i --auv2-id ${{ matrix.auv2_type }}:${{ matrix.auv2_subtype }}:${{ matrix.auv2_manufacturer }} target/debug/${{ matrix.library_name }}
 
       - name: Upload AUv2
         uses: actions/upload-artifact@v4

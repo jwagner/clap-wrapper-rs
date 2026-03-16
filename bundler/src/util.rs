@@ -176,7 +176,7 @@ pub fn sign_adhoc(bundle: &Path) -> Result<()> {
 /// Kill the `AudioComponentRegistrar` process on macOS, which is responsible for caching AU plugin information.
 pub fn kill_audio_component_registrar() -> Result<()> {
     if !cfg!(target_os = "macos") {
-        anyhow::bail!("AudioComponentRegistrar is only supported on macOS");
+        anyhow::bail!("Killing AudioComponentRegistrar is only supported on macOS");
     }
 
     std::process::Command::new("killall")
@@ -203,24 +203,24 @@ impl FromStr for AUv2Id {
 
     fn from_str(s: &str) -> Result<Self> {
         let mut parts = s.split(':');
-        let manufacturer = parts
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Missing manufacturer code"))?
-            .as_bytes()
-            .try_into()
-            .map_err(|_| anyhow::anyhow!("Manufacturer code must be 4 characters"))?;
-        let subtype = parts
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Missing subtype code"))?
-            .as_bytes()
-            .try_into()
-            .map_err(|_| anyhow::anyhow!("Subtype code must be 4 characters"))?;
         let type_ = parts
             .next()
             .ok_or_else(|| anyhow::anyhow!("Missing type code"))?
             .as_bytes()
             .try_into()
             .map_err(|_| anyhow::anyhow!("Type code must be 4 characters"))?;
+        let subtype = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Missing subtype code"))?
+            .as_bytes()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Subtype code must be 4 characters"))?;
+        let manufacturer = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Missing manufacturer code"))?
+            .as_bytes()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Manufacturer code must be 4 characters"))?;
 
         Ok(Self {
             manufacturer,
