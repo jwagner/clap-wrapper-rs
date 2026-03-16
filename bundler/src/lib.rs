@@ -25,11 +25,11 @@ struct Args {
 
     /// override the AUv2 ID in the `manu:type:subt` format, only works if the library exports only a single plugin)
     #[argh(option)]
-    auv2_override_id: Option<AUv2Id>,
+    auv2_id: Option<AUv2Id>,
 
     /// dylibs built with `clap_wrapper` to bundle.
     #[argh(positional)]
-    dylibs: Vec<PathBuf>,
+    libraries: Vec<PathBuf>,
 }
 
 pub fn run() -> ! {
@@ -47,16 +47,16 @@ fn run_result() -> Result<()> {
     let os = util::OperatingSystem::current()?;
     let arch = util::Architecture::current()?;
 
-    if args.dylibs.is_empty() {
+    if args.libraries.is_empty() {
         anyhow::bail!("no input files provided");
     }
 
-    if args.auv2_override_id.is_some() && args.dylibs.len() != 1 {
+    if args.auv2_id.is_some() && args.libraries.len() != 1 {
         anyhow::bail!("--auv2-id option can only be used when bundling a single plugin");
     }
 
     let mut failed = false;
-    for dylib in args.dylibs {
+    for dylib in args.libraries {
         let dylib = util::fix_dylib_path(&dylib, os);
 
         eprint!("{} - ", dylib.display().bold());
@@ -105,7 +105,7 @@ fn run_result() -> Result<()> {
                 arch,
                 overwrite_existing: true,
                 vst3_single_file: args.vst3_folder,
-                auv2_override_id: args.auv2_override_id,
+                auv2_override_id: args.auv2_id,
             };
 
             match options.bundle() {
