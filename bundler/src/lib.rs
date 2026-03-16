@@ -119,10 +119,7 @@ fn run_result() -> Result<()> {
                     if args.install
                         && let Some(install_dir) = util::os_plugin_dir(format)
                     {
-                        match util::copy_all(
-                            &path,
-                            &install_dir.join("dev").join(path.file_name().unwrap()),
-                        ) {
+                        match util::copy_all(&path, &install_dir.join(path.file_name().unwrap())) {
                             Ok(()) => {
                                 eprintln!(
                                     "    {} installed to the system folder",

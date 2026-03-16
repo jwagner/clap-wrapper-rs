@@ -124,7 +124,7 @@ pub fn os_plugin_dir(format: PluginFormat) -> Option<PathBuf> {
                     .map(|x| PathBuf::from(x).join("Programs/Common/CLAP/"))
             } else if cfg!(target_os = "macos") {
                 std::env::var_os("HOME")
-                    .map(|x| PathBuf::from(x).join("Library/Audio/Plug-Ins/VST3/"))
+                    .map(|x| PathBuf::from(x).join("Library/Audio/Plug-Ins/CLAP/"))
             } else {
                 std::env::var_os("HOME").map(|x| PathBuf::from(x).join(".clap/"))
             }
