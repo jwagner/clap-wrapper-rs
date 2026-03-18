@@ -17,8 +17,7 @@ An easy way to use [clap-wrapper](https://github.com/free-audio/clap-wrapper) in
 
 ## Limitations
 - Currently only supports VST3 and AUv2 plugins. Standalone builds are not supported yet.
-- AUv2 wrapper can only export a single plugin per binary. If `clap_entry` exports multiple plugins,
-  only the first one will be exported.
+- AUv2 wrapper can only export up to 4 plugins per binary for now.
 
 ## Usage
 
@@ -26,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-wrapper = { version = "0.2.0", features = ["vst3", "auv2", "parallel"] } # these features are enabled by default
+clap-wrapper = { version = "0.3.0", features = ["vst3", "auv2", "parallel"] } # these features are enabled by default
 ```
     
 Then, in your `lib.rs`:
