@@ -2,13 +2,14 @@
 resolver = "3"
 members = [ 
     ".", 
+    "bundler",
     "examples/example-clack",
     "examples/example-nih-plug",
 ]
 
 [package]
 name = "clap-wrapper"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 authors = ["Quant1um"]
 readme = "README.md"

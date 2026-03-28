@@ -32,7 +32,7 @@ fn build_vst3(os: &str, debug: bool) {
     cc.include("./external/vst3sdk/public.sdk");
     cc.include("./external/vst3sdk/pluginterfaces");
 
-    cc.define("CLAP_WRAPPER_VERSION", Some("\"0.11.0\""));
+    cc.define("CLAP_WRAPPER_VERSION", Some("\"0.14.0\""));
     cc.define("CLAP_WRAPPER_BUILD_FOR_VST3", Some("1"));
     cc.define("STATICALLY_LINKED_CLAP_ENTRY", Some("1"));
 
@@ -132,7 +132,7 @@ fn build_vst3(os: &str, debug: bool) {
 
 fn build_auv2(debug: bool) {
     let mut cc = cc::Build::new();
-    cc.cpp(true).std("c++20"); //AudioUnitSDK requires C++20
+    cc.cpp(true).std("c++17"); //AudioUnitSDK requires C++17 (rolled back to 1.1.0)
     cc.flag_if_supported("-fno-char8_t");
 
     cc.include("./src/auv2-cpp");
@@ -142,7 +142,7 @@ fn build_auv2(debug: bool) {
     cc.include("./external/clap-wrapper/src");
     cc.include("./external/AudioUnitSDK/include");
 
-    cc.define("CLAP_WRAPPER_VERSION", Some("\"0.11.0\""));
+    cc.define("CLAP_WRAPPER_VERSION", Some("\"0.14.0\""));
     cc.define("CLAP_WRAPPER_BUILD_AUV2", Some("1"));
     cc.define("STATICALLY_LINKED_CLAP_ENTRY", Some("1"));
     cc.define("DICTIONARY_STREAM_FORMAT_WRAPPER", Some("1"));

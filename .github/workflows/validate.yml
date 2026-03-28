@@ -10,14 +10,16 @@ jobs:
         include:
           - package: example-nih-plug
             library_name: libexample_nih_plug.so
+            plugin_name: Gain GUI (VIZIA)
           - package: example-clack
             library_name: libexample_clack.so
-          
+            plugin_name: Clack PolySynth Example
+
     name: Validate "${{ matrix.package }}" (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
             submodules: recursive
 
@@ -37,16 +39,13 @@ jobs:
         shell: bash
         run: |
             cargo build -p ${{ matrix.package }}
-            
-            # bundle vst3
-            mkdir -p ${{ matrix.package }}.vst3/Contents/x86_64-linux/
-            mv target/debug/${{ matrix.library_name }} ${{ matrix.package }}.vst3/Contents/x86_64-linux/${{ matrix.package }}.so
-  
+            cargo bundle target/debug/${{ matrix.library_name }}
+
       - name: Upload VST3
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ matrix.runner }}-vst3
-          path: ${{ matrix.package }}.vst3
+          path: ./target/debug/${{ matrix.plugin_name }}.vst3
           retention-days: 30
 
       - name: Build `vst3-validator`
@@ -65,7 +64,7 @@ jobs:
       - name: Run `vst3-validator`
         shell: bash
         run: |
-            "./vst3sdk/cmake-build/bin/validator" -e "./${{ matrix.package }}.vst3" 
+            "./vst3sdk/cmake-build/bin/validator" -e "./target/debug/${{ matrix.plugin_name }}.vst3" 
 
   validate-windows:
     strategy:
@@ -75,14 +74,16 @@ jobs:
         include:
           - package: example-nih-plug
             library_name: example_nih_plug.dll
+            plugin_name: Gain GUI (VIZIA)
           - package: example-clack
             library_name: example_clack.dll
+            plugin_name: Clack PolySynth Example
 
     name: Validate "${{ matrix.package }}" (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
             submodules: recursive
 
@@ -96,18 +97,13 @@ jobs:
         shell: bash
         run: |
             cargo build -p ${{ matrix.package }}
-
-            # bundle vst3. we dont really have to do that as the dll file by itself can be used as a vst3, 
-            # but the validator really wants it to be a vst3 bundle so we have no choice
-            # for more info on directory structure, see https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Format.html
-            mkdir -p ${{ matrix.package }}.vst3/Contents/x86_64-win/
-            mv target/debug/${{ matrix.library_name }} ${{ matrix.package }}.vst3/Contents/x86_64-win/${{ matrix.package }}.vst3
+            cargo bundle --vst3-folder target/debug/${{ matrix.library_name }}
 
       - name: Upload VST3
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ matrix.runner }}-vst3
-          path: ${{ matrix.package }}.vst3
+          path: ./target/debug/${{ matrix.plugin_name }}.vst3
           retention-days: 30
 
       - name: Build `vst3-validator`
@@ -126,7 +122,7 @@ jobs:
       - name: Run `vst3-validator`
         shell: bash
         run: |
-            "./vst3sdk/cmake-build/bin/Debug/validator" -e "./${{ matrix.package }}.vst3" 
+            "./vst3sdk/cmake-build/bin/Debug/validator" -e "./target/debug/${{ matrix.plugin_name }}.vst3" 
       
   validate-macos:
     strategy:
@@ -136,11 +132,13 @@ jobs:
         include:
           - package: example-nih-plug
             library_name: libexample_nih_plug.dylib
+            plugin_name: Gain GUI (VIZIA)
             auv2_type: aufx
             auv2_subtype: gain
             auv2_manufacturer: Mois
           - package: example-clack
             library_name: libexample_clack.dylib
+            plugin_name: Clack PolySynth Example
             auv2_type: aumu
             auv2_subtype: psyn
             auv2_manufacturer: Clck
@@ -149,7 +147,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
             submodules: recursive
 
@@ -163,37 +161,27 @@ jobs:
         shell: bash
         run: |
             cargo build -p ${{ matrix.package }}
-            
-            # bundle vst3 and include the Info.plist stuff
-            # for more info on directory structure, see https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Format.html
-            mkdir -p ${{ matrix.package }}.vst3/Contents/MacOS/
-            cp target/debug/${{ matrix.library_name }} ${{ matrix.package }}.vst3/Contents/MacOS/${{ matrix.package }}
-            cp examples/${{ matrix.package }}/Info.vst3.plist ${{ matrix.package }}.vst3/Contents/Info.plist
-            echo "BNDL????" > ${{ matrix.package }}.vst3/Contents/PkgInfo
-
-            # bundle auval and include the Info.plist stuff
-            mkdir -p ${{ matrix.package }}.component/Contents/MacOS/
-            cp target/debug/${{ matrix.library_name }} ${{ matrix.package }}.component/Contents/MacOS/${{ matrix.package }}
-            cp examples/${{ matrix.package }}/Info.auv2.plist ${{ matrix.package }}.component/Contents/Info.plist
-            echo "BNDL????" > ${{ matrix.package }}.component/Contents/PkgInfo
-
-            # sign the plugins without an associated identity
-            codesign --force --timestamp --deep -s - ${{ matrix.package }}.vst3
-            codesign --force --timestamp --deep -s - ${{ matrix.package }}.component
+            cargo bundle -i --auv2-id ${{ matrix.auv2_type }}:${{ matrix.auv2_subtype }}:${{ matrix.auv2_manufacturer }} target/debug/${{ matrix.library_name }}
 
       - name: Upload AUv2
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ matrix.runner }}-auv2
-          path: ${{ matrix.package }}.component
+          path: ./target/debug/${{ matrix.plugin_name }}.component
           retention-days: 30
 
       - name: Upload VST3
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ matrix.runner }}-vst3
-          path: ${{ matrix.package }}.vst3
+          path: ./target/debug/${{ matrix.plugin_name }}.vst3
           retention-days: 30
+
+      - name: Run `auval`
+        shell: bash
+        run: |
+            auval -a
+            auval -strict -v ${{ matrix.auv2_type }} ${{ matrix.auv2_subtype }} ${{ matrix.auv2_manufacturer }}
 
       - name: Build `vst3-validator`
         shell: bash
@@ -211,13 +199,4 @@ jobs:
       - name: Run `vst3-validator`
         shell: bash
         run: |
-            "./vst3sdk/cmake-build/bin/validator" -e "./${{ matrix.package }}.vst3" 
-
-      - name: Run `auval`
-        shell: bash
-        run: |
-            mkdir -p ~/Library/Audio/Plug-Ins/Components/
-            cp -R ${{ matrix.package }}.component ~/Library/Audio/Plug-Ins/Components/
-            killall -9 AudioComponentRegistrar || true
-            auval -a
-            auval -strict -v ${{ matrix.auv2_type }} ${{ matrix.auv2_subtype }} ${{ matrix.auv2_manufacturer }}
+            "./vst3sdk/cmake-build/bin/validator" -e "./target/debug/${{ matrix.plugin_name }}.vst3" 

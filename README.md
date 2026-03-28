@@ -17,8 +17,7 @@ An easy way to use [clap-wrapper](https://github.com/free-audio/clap-wrapper) in
 
 ## Limitations
 - Currently only supports VST3 and AUv2 plugins. Standalone builds are not supported yet.
-- AUv2 wrapper can only export a single plugin per binary. If `clap_entry` exports multiple plugins,
-  only the first one will be exported.
+- AUv2 wrapper can only export up to 4 plugins per binary for now.
 
 ## Usage
 
@@ -26,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-wrapper = { version = "0.2.0", features = ["vst3", "auv2", "parallel"] } # these features are enabled by default
+clap-wrapper = { version = "0.3.0", features = ["vst3", "auv2", "parallel"] } # these features are enabled by default
 ```
     
 Then, in your `lib.rs`:
@@ -42,15 +41,21 @@ This will export VST3 and AUv2 entrypoints that use the `clap_entry` symbol expo
 Keep in mind, that `clap-wrapper-rs` only adds the necessary entrypoints that reexport the CLAP plugin you already have. You'd still have to use a crate like `nih-plug` to actually create the plugin.
 
 
-After building, you have to manually "bundle" your plugin. This means setting up the correct directory structure and copying the necessary files. See [VST 3 Developer Portal: Plug-in Format Structure](https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Format.html) for more info about VST3 directory structure. For AUv2, the directory structure is similar. 
-Note that when building for MacOS you have to add a `Info.plist` file yourself.
-Check out [Info.vst3.plist](examples/example-clack/Info.vst3.plist) and [Info.auv2.plist](examples/example-clack/Info.auv2.plist) for an example of what `Info.plist` should look like.
+After building, you have to "bundle" your plugin. This means setting up the correct directory structure and copying the necessary files. See [VST 3 Developer Portal: Plug-in Format Structure](https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Format.html) for more info about VST3 directory structure. For AUv2, the directory structure is similar. 
+
+
+**clap-wrapper-rs** ships with a `bundler` tool that can be run as a separate step after
+building the plugin library. Click [here](bundler/README.md) for more info about how to use it.
 
 
 See [validate.yml](.github/workflows/validate.yml) for a complete example of how to build, bundle and validate a plugin.
 
 ## Changelog
 
+- 0.3.0:
+    - Updated `clap-wrapper` to latest (0.14.0). See [clap-wrapper changelog](https://github.com/free-audio/clap-wrapper/wiki/ChangeLog#0140-march-2026).
+    - Added an experimental bundler tool (see [bundler](bundler) folder) that can be used to 
+    automate the bundling process.
 - 0.2.1:
     - Added documentation
 - 0.2.0:
