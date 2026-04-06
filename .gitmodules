@@ -9,7 +9,7 @@
 	url = https://github.com/free-audio/clap
 [submodule "clap-wrapper-auv2/external/clap-wrapper"]
 	path = external/clap-wrapper
-	url = https://github.com/free-audio/clap-wrapper
+	url = git@github.com:jwagner/clap-wrapper.git
 [submodule "clap-wrapper-auv2/external/filesystem"]
 	path = external/filesystem
 	url = https://github.com/gulrak/filesystem
