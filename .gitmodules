@@ -9,7 +9,7 @@
 	url = https://github.com/free-audio/clap
 [submodule "clap-wrapper-auv2/external/clap-wrapper"]
 	path = external/clap-wrapper
-	url = git@github.com:free-audio/clap-wrapper.git
+	url = https://github.com/free-audio/clap-wrapper
 	branch = next
 [submodule "clap-wrapper-auv2/external/filesystem"]
 	path = external/filesystem
