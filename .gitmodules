@@ -13,5 +13,3 @@
 [submodule "clap-wrapper-auv2/external/filesystem"]
 	path = external/filesystem
 	url = https://github.com/gulrak/filesystem
-[submodule "external/clap-wrapper"]
-	branch = next
